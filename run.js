@@ -1,36 +1,53 @@
 'use strict';
-
-var canvas = document.getElementById('gamewindow'); 
-var c = canvas.getContext('2d'); 
-//c.fillStyle = "red"; 
-//c.fillRect(100,100,400,300);
-//var assets = new Image();   // Создаёт новый элемент изображения
-//var assets = document.getElementById("assets");
-//c.drawImage(assets, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
-//c.drawImage(assets, 0, 0, 100, 100, 0, 0, 100, 100);
-//c.drawImage(assets,0,0);
+//скрипт Пола Ириша для кроссбраузерности
+// setTimeout в качестве запасного варианта
+window.requestAnimFrame = (function(){ 
+    return  window.requestAnimationFrame       || 
+            window.webkitRequestAnimationFrame || 
+            window.mozRequestAnimationFrame    || 
+            window.oRequestAnimationFrame      || 
+            window.msRequestAnimationFrame     || 
+            function( callback ){ 
+              window.setTimeout(callback, 1000 / 60); 
+            }; 
+  })();
 
 // Создаем объект изображения
 var assets = new Image();
-
-// Привязываем функцию к событию onload
-// Это указывает браузеру, что делать, когда изображение загружено
+//Создание глобальной переменной, впоследствии хранящей информацию о модели
+var globalModel;
+//основной цикл игры
+function mainCycle(elementCoordinate){
+    var x = elementCoordinate[0];
+    var y = elementCoordinate[1];
+    console.log(x+";"+y);
+    var MainView = new View(assets);
+    MainView.hideTiles(globalModel, elementCoordinate)
+    globalModel.setElementType(elementCoordinate, 0);
+    console.log(globalModel.findZeroTypeElements());
+}
+// Привязываем функцию генерации стартовой доски к событию onload (чтобы загрузилась графика игры)
+// 
 assets.onload = function() {
-	c.drawImage(assets, 180, 510, 170, 170, 0, 0, 50, 50);//голубой 1
-    c.drawImage(assets, 350, 510, 170, 170, 50, 0, 50, 50);//фиолетовый 2
-    c.drawImage(assets, 520, 510, 170, 170, 100, 0, 50, 50);//красный 3
-    c.drawImage(assets, 690, 510, 170, 170, 150, 0, 50, 50);//жёлтый 4
-    c.drawImage(assets, 860, 510, 170, 170, 200, 0, 50, 50);//зелёный 5
+	//c.drawImage(assets, 180, 510, 170, 170, 0, 0, 50, 50);//голубой 1
+    //c.drawImage(assets, 350, 510, 170, 170, 50, 0, 50, 50);//фиолетовый 2
+    //c.drawImage(assets, 520, 510, 170, 170, 100, 0, 50, 50);//красный 3
+    //c.drawImage(assets, 690, 510, 170, 170, 150, 0, 50, 50);//жёлтый 4
+    //c.drawImage(assets, 860, 510, 170, 170, 200, 0, 50, 50);//зелёный 5
 
     var Mod = new Model();
+    globalModel = Mod;
     console.log (Mod);
     var InitialView = new View(assets);
-    InitialView.createView(Mod)
+    InitialView.createView(Mod);
+    var GameController = new Controller ();
 };
 
-// Загружаем файл изображения
+// Загружаем файл изображения (графика для игры)
 assets.src = "tilesource.jpg";
-
+/**
+ * 
+ */
 class Model {
     //при старте модель (игровая доска) случайным образом заполняется элементами
     //также в модель добавляются оставшиеся ходы и ноль очков
@@ -52,8 +69,30 @@ class Model {
         var max = Math.floor(5);
         return Math.floor(Math.random() * (max - min + 1)) + min; 
     }
-}
 
+    consoleLogModel(){
+        //console.log (this);
+    }
+
+    setElementType(elementCoordinate, value){
+        this.Board['element('+elementCoordinate[0]+'_'+elementCoordinate[1]+')'].type = value;
+    }
+
+    //функция находит в модели пустые тайлы
+    //возвращает объект  с параметрами этих тайлов
+    findZeroTypeElements(){
+        var Result = Object();
+        for (let elementName in this.Board){
+            if (this.Board[elementName].type == 0){
+                Result[elementName] = this.Board[elementName];
+            }
+        }
+    return Result;    
+    }
+}
+/**
+ * 
+ */
 class View{
 
     constructor (assets){
@@ -74,14 +113,72 @@ class View{
     }
 
     createView(Model){
+        this.ctx.clearRect(0, 0, 800, 1000); 
         for (let elementName in Model.Board){
-            //var ctx = document.getElementById('gamewindow').getContext('2d');
             let element = Model.Board[elementName];
             this.ctx.drawImage(this.assets, this.tileTypesFromAsset[element.type], 510, 170, 170, this.convertCoordinatesPixel(element.x), this.convertCoordinatesPixel(element.y), 50, 50);
-            console.log (element);
+        }
+    }
+    //функция создаёт анимацию исчезновения тайлов с доски
+    hideTiles(Model, elementCoordinate){
+        var x = this.convertCoordinatesPixel(elementCoordinate[0]);
+        var y = this.convertCoordinatesPixel(elementCoordinate[1]);
+        var Element = Model.Board["element("+elementCoordinate[0]+"_"+elementCoordinate[1]+")"];
+        if (Element.type == 0){
+            return;
+        };
+        this.ctx.fillStyle = "black";
+        let ctx = this.ctx;
+        let assets = this.assets;
+        let tileType = this.tileTypesFromAsset[Element.type];
+        let counter = 0;
+        window.requestAnimFrame(draw);
+        function draw(){
+            if (counter > 23){
+                ctx.fillRect(x, y, 50, 50);
+                return;
+            }
+        window.requestAnimFrame(draw); 
+        ctx.fillRect(x, y, 50, 50);
+        ctx.drawImage(assets, tileType, 510, 170, 170, x+counter, y+counter, 50-(counter*2), 50-(counter*2));
+        counter = counter + 1;
         }
     }
 
+}
+/**
+ * 
+ * 
+ */
+class Controller{
+
+    constructor (){
+        this.canvas = document.getElementById('gamewindow');
+        this.canvas.addEventListener('mouseup', this.runGameIteration.bind(this));
+    }
+    //Функция возвращает массив [x, y], где x и y координаты щелчка на игровом поле в пикселах
+    controllerClickPixelCoordinates(e){
+        return this.getCursorPosition(this.canvas, e);
+    }
+    //функция вносит поправку на смещение элемента с игровым окном
+    //относительно верхнего левого угла браузера
+    getCursorPosition(canvas, event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        return [x, y];
+    }
+    //функция определяет по координатам щелчка элемент игровой доски, на котором произошёл щелчок
+    //и запускает основной игровой цикл
+    runGameIteration(e){
+        var CursorPosition = this.controllerClickPixelCoordinates(e);
+        if (CursorPosition[0] < 450 && CursorPosition[1] < 550){
+            var elementCoordinate = [Math.floor(CursorPosition[0]/50)+1, Math.floor(CursorPosition[1]/50)+1];
+            mainCycle(elementCoordinate, Model);
+        }else{
+            return;
+        }
+    }
 }
 
 

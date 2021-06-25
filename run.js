@@ -16,11 +16,16 @@ var assets = new Image();
 // Привязываем функцию к событию onload
 // Это указывает браузеру, что делать, когда изображение загружено
 assets.onload = function() {
-	c.drawImage(assets, 180, 510, 170, 160, 0, 0, 50, 50);//голубой 1
-    c.drawImage(assets, 350, 510, 170, 160, 50, 0, 50, 50);//фиолетовый 2
-    c.drawImage(assets, 520, 510, 170, 160, 100, 0, 50, 50);//красный 3
-    c.drawImage(assets, 690, 510, 170, 160, 150, 0, 50, 50);//жёлтый 4
-    c.drawImage(assets, 860, 510, 170, 160, 200, 0, 50, 50);//зелёный 5
+	c.drawImage(assets, 180, 510, 170, 170, 0, 0, 50, 50);//голубой 1
+    c.drawImage(assets, 350, 510, 170, 170, 50, 0, 50, 50);//фиолетовый 2
+    c.drawImage(assets, 520, 510, 170, 170, 100, 0, 50, 50);//красный 3
+    c.drawImage(assets, 690, 510, 170, 170, 150, 0, 50, 50);//жёлтый 4
+    c.drawImage(assets, 860, 510, 170, 170, 200, 0, 50, 50);//зелёный 5
+
+    var Mod = new Model();
+    console.log (Mod);
+    var InitialView = new View(assets);
+    InitialView.createView(Mod)
 };
 
 // Загружаем файл изображения
@@ -49,5 +54,34 @@ class Model {
     }
 }
 
-var Mod = new Model();
-console.log (Mod);
+class View{
+
+    constructor (assets){
+        //константа.Указыает координаты х из исходного изображения
+        this.tileTypesFromAsset = [0, 180, 350, 520, 690, 860];
+        //константа.Указыает исходное изображение с графикой для игры
+        this.assets = assets;
+        this.ctx = document.getElementById('gamewindow').getContext('2d');
+    }
+
+    getCanvas(){
+        return document.getElementById('gamewindow').getContext('2d');
+    }
+
+    convertCoordinatesPixel(elementCoordinate){
+        let pixelCoordinate = (elementCoordinate * 50)-50;
+        return pixelCoordinate;
+    }
+
+    createView(Model){
+        for (let elementName in Model.Board){
+            //var ctx = document.getElementById('gamewindow').getContext('2d');
+            let element = Model.Board[elementName];
+            this.ctx.drawImage(this.assets, this.tileTypesFromAsset[element.type], 510, 170, 170, this.convertCoordinatesPixel(element.x), this.convertCoordinatesPixel(element.y), 50, 50);
+            console.log (element);
+        }
+    }
+
+}
+
+

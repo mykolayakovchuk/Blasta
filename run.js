@@ -20,11 +20,14 @@ var globalModel;
 function mainCycle(elementCoordinate){
     var x = elementCoordinate[0];
     var y = elementCoordinate[1];
-    console.log(x+";"+y);
+    console.log(x+";"+y+"type"+globalModel.getElementType(elementCoordinate));
+    //console.log(globalModel.findSameTypeElementArray(elementCoordinate));
+    var elementCoordinateArray = globalModel.elementCoordinateToArray(elementCoordinate);
+    globalModel.findSameTypeElementArray(elementCoordinateArray);
     var MainView = new View(assets);
     MainView.hideTiles(globalModel, elementCoordinate)
     globalModel.setElementType(elementCoordinate, 0);
-    console.log(globalModel.findZeroTypeElements());
+    //console.log(globalModel.findZeroTypeElements());
 }
 // Привязываем функцию генерации стартовой доски к событию onload (чтобы загрузилась графика игры)
 // 
@@ -78,6 +81,29 @@ class Model {
         this.Board['element('+elementCoordinate[0]+'_'+elementCoordinate[1]+')'].type = value;
     }
 
+    getElementType(elementCoordinate){
+        if(elementCoordinate[0]>= 1 && elementCoordinate[0] <= 9 && elementCoordinate[1]>= 1 && elementCoordinate[1] <= 11){
+            return this.Board['element('+elementCoordinate[0]+'_'+elementCoordinate[1]+')'].type;
+        }else{
+            return "undefined";
+        }
+    }
+
+    getElement(elementCoordinate){
+        if(elementCoordinate[0]>= 1 && elementCoordinate[0] <= 9 && elementCoordinate[1]>= 1 && elementCoordinate[1] <= 11){
+            return this.Board['element('+elementCoordinate[0]+'_'+elementCoordinate[1]+')'];
+        }else{
+            return "undefined";
+        }
+        
+    }
+
+    elementCoordinateToArray(elementCoordinate){
+        var elementCoordinateArray = [];
+        elementCoordinateArray.push(elementCoordinate);
+        return elementCoordinateArray;
+    }
+
     //функция находит в модели пустые тайлы
     //возвращает объект  с параметрами этих тайлов
     findZeroTypeElements(){
@@ -88,6 +114,35 @@ class Model {
             }
         }
     return Result;    
+    }
+
+    findSameTypeElementArray(elementCoordinateArray){
+        var result = elementCoordinateArray;
+        var searchedType = this.getElementType(elementCoordinateArray[0]);
+        //elementCoordinateArray.push([0,0]);
+        for (var element of elementCoordinateArray){
+            var searchArea = [[element[0]-1, element[1]], [element[0]+1, element[1]],
+                              [element[0], element[1]-1], [element[0], element[1]+1]];
+                              console.log(searchArea);
+            for (var neighboringElement of searchArea){
+                if (this.getElementType(neighboringElement) == searchedType
+                    && this.checkEntry (result, neighboringElement) == false){
+                    result.push (neighboringElement);
+                }
+            }
+        }
+    }
+
+    //проверка вхождения элемента массива (вида [number, number]) в общий массив
+    // вида [[number, number], [number, number], [number, number] ....]
+    //@return true | false
+    checkEntry (array, element){
+        for (var value of array){
+            if(element[0] === value[0] && element[1] === value[1]){
+                return true;
+            } 
+        }
+    return false;    
     }
 }
 /**

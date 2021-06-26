@@ -35,25 +35,14 @@ function mainCycle(elementCoordinate){
     
     var ZeroTypeElements = globalModel.findZeroTypeElements();
     var elementsAboveZero = globalModel.findElementAboveZero(globalModel, ZeroTypeElements);
-    //console.log (elementsAboveZero);
-    
     while (Object.keys(elementsAboveZero).length > 0){
         //пока есть элементы над пустыми клетками, они будут двигаться по одной клетке вниз
         //пока не останеться элементов над пустыми тайлами(клетками)
+        elementsAboveZero = globalModel.findElementAboveZero(globalModel, globalModel.findZeroTypeElements());
         MainView.moveTilesDown(globalModel, elementsAboveZero);
-        globalModel.moveElementsDown (elementsAboveZero);
-        //MainView.createView(globalModel);
-        ZeroTypeElements = globalModel.findZeroTypeElements();
-        elementsAboveZero = globalModel.findElementAboveZero(globalModel, ZeroTypeElements);
-        //console.log(globalModel);
-        //console.log (elementsAboveZero);
+        globalModel.moveElementsDown(elementsAboveZero);
+        MainView.createView(globalModel);
     }
-        //MainView.moveTilesDown(globalModel, elementsAboveZero);
-        //globalModel.moveElementsDown (elementsAboveZero);
-        //MainView.createView(globalModel);
-        //ZeroTypeElements = globalModel.findZeroTypeElements();
-        //elementsAboveZero = globalModel.findElementAboveZero(globalModel, ZeroTypeElements);
-        //console.log(globalModel);
 }
 // Привязываем функцию генерации стартовой доски к событию onload (чтобы загрузилась графика игры)
 // 
@@ -271,7 +260,7 @@ class View{
         let assets = this.assets;
         let tileType = this.tileTypesFromAsset[Element.type];
         let counter = 0;
-        window.requestAnimFrame(draw);
+        
         function draw(){
             if (counter > 23){
                 ctx.fillRect(x, y, 50, 50);
@@ -282,6 +271,8 @@ class View{
         ctx.drawImage(assets, tileType, 510, 170, 170, x+counter, y+counter, 50-(counter*2), 50-(counter*2));
         counter = counter + 1;
         }
+        window.requestAnimFrame(draw);
+        return;
     }
 
     //функция анимации перемещения одного тайла на одну клетку вниз
@@ -298,10 +289,8 @@ class View{
         let assets = this.assets;
         let tileType = this.tileTypesFromAsset[Element.type];
         let counter = 0;
-        window.requestAnimFrame(draw);
         function draw(){
             if (counter > 50){
-
                 return;
             }
         window.requestAnimFrame(draw); 
@@ -309,6 +298,8 @@ class View{
         ctx.drawImage(assets, tileType, 510, 170, 170, x, y+counter, 50, 50);
         counter = counter + 2;
         }
+        window.requestAnimFrame(draw);
+        return;
     }
 
     //функция анимации перемещения группы тайлов на одну клетку вниз (см. также функцию moveTileDown)

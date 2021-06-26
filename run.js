@@ -17,7 +17,7 @@ window.requestAnimFrame = (function(){
 var assets = new Image();
 //Создание глобальной переменной, впоследствии хранящей информацию о модели
 var globalModel;
-//основной цикл игры
+//ОСНОВНОЙ ЦИКЛ ИГРЫ
 function mainCycle(elementCoordinate){
     var x = elementCoordinate[0];
     var y = elementCoordinate[1];
@@ -32,8 +32,28 @@ function mainCycle(elementCoordinate){
         MainView.hideTiles(globalModel, elementCoordinate);
         globalModel.setElementType(elementCoordinate, 0);
     }
+    
     var ZeroTypeElements = globalModel.findZeroTypeElements();
     var elementsAboveZero = globalModel.findElementAboveZero(globalModel, ZeroTypeElements);
+    //console.log (elementsAboveZero);
+    
+    while (Object.keys(elementsAboveZero).length > 0){
+        //пока есть элементы над пустыми клетками, они будут двигаться по одной клетке вниз
+        //пока не останеться элементов над пустыми тайлами(клетками)
+        MainView.moveTilesDown(globalModel, elementsAboveZero);
+        globalModel.moveElementsDown (elementsAboveZero);
+        //MainView.createView(globalModel);
+        ZeroTypeElements = globalModel.findZeroTypeElements();
+        elementsAboveZero = globalModel.findElementAboveZero(globalModel, ZeroTypeElements);
+        //console.log(globalModel);
+        //console.log (elementsAboveZero);
+    }
+        //MainView.moveTilesDown(globalModel, elementsAboveZero);
+        //globalModel.moveElementsDown (elementsAboveZero);
+        //MainView.createView(globalModel);
+        //ZeroTypeElements = globalModel.findZeroTypeElements();
+        //elementsAboveZero = globalModel.findElementAboveZero(globalModel, ZeroTypeElements);
+        //console.log(globalModel);
 }
 // Привязываем функцию генерации стартовой доски к событию onload (чтобы загрузилась графика игры)
 // 
@@ -115,7 +135,7 @@ class Model {
     findZeroTypeElements(){
         var Result = Object();
         for (let elementName in this.Board){
-            if (this.Board[elementName].type == 0){
+            if (this.Board[elementName].type === 0){
                 Result[elementName] = this.Board[elementName];
             }
         }
@@ -172,9 +192,8 @@ class Model {
         for (var element in ZeroTypeElements){
             var currentX = ZeroTypeElements[element].x;
             var currentY = ZeroTypeElements[element].y;
-            //console.log(currentX+"==="+currentY)
-            var aboveElementName = 'element('+currentX+'_'+(currentY-1)+')';
-            if (Board[aboveElementName].type === 0 || Board[aboveElementName].type === "undefined"){
+            var aboveElementCoordinate = [ currentX, (currentY-1)];
+            if (this.getElementType(aboveElementCoordinate) === 0 || this.getElementType(aboveElementCoordinate) === "undefined"){
                 continue;
             }
             for ( var y = currentY; y > 0; y=y-1){
@@ -185,6 +204,23 @@ class Model {
             }
         }
         return elementsAboveZeroArray;
+    }
+
+    //функция перемещения значения(type) тайла на одну клетку вниз
+    //input Array (х, у) (массив с координатами перемещаемого элемента)
+    moveElementDown (elementCoordinate){
+        var elementType = this.getElementType(elementCoordinate);
+        var elementCoordinateUnder = [elementCoordinate[0], (elementCoordinate[1]+1)]
+        this.setElementType(elementCoordinateUnder, elementType);
+        this.setElementType(elementCoordinate, 0);
+    }
+
+    //функция перемещения значения группы тайлов на одну клетку вниз
+    //input Array ((х, у), (х, у),(х, у)...) (массив массивов с координатами перемещаемого элемента)
+    moveElementsDown (elementCoordinateArray){
+        for (var elementCoordinate of elementCoordinateArray){
+            this.moveElementDown (elementCoordinate);
+        }
     }
 }
 /**
@@ -213,9 +249,15 @@ class View{
         this.ctx.clearRect(0, 0, 800, 1000); 
         for (let elementName in Model.Board){
             let element = Model.Board[elementName];
-            this.ctx.drawImage(this.assets, this.tileTypesFromAsset[element.type], 510, 170, 170, this.convertCoordinatesPixel(element.x), this.convertCoordinatesPixel(element.y), 50, 50);
+            if (element.type === 0){
+                this.ctx.fillStyle = "black";
+                this.ctx.fillRect(this.convertCoordinatesPixel(element.x), this.convertCoordinatesPixel(element.y), 50, 50);
+            }else{
+                this.ctx.drawImage(this.assets, this.tileTypesFromAsset[element.type], 510, 170, 170, this.convertCoordinatesPixel(element.x), this.convertCoordinatesPixel(element.y), 50, 50);
+            }
         }
     }
+
     //функция создаёт анимацию исчезновения тайлов с доски
     hideTiles(Model, elementCoordinate){
         var x = this.convertCoordinatesPixel(elementCoordinate[0]);
@@ -239,6 +281,41 @@ class View{
         ctx.fillRect(x, y, 50, 50);
         ctx.drawImage(assets, tileType, 510, 170, 170, x+counter, y+counter, 50-(counter*2), 50-(counter*2));
         counter = counter + 1;
+        }
+    }
+
+    //функция анимации перемещения одного тайла на одну клетку вниз
+    //input Model, Array (х, у) (массив с координатами перемещаемого элемента)
+    moveTileDown (Model, elementCoordinate){
+        var x = this.convertCoordinatesPixel(elementCoordinate[0]);
+        var y = this.convertCoordinatesPixel(elementCoordinate[1]);
+        var Element = Model.Board["element("+elementCoordinate[0]+"_"+elementCoordinate[1]+")"];
+        if (Element.type == 0){
+            return;
+        };
+        this.ctx.fillStyle = "black";
+        let ctx = this.ctx;
+        let assets = this.assets;
+        let tileType = this.tileTypesFromAsset[Element.type];
+        let counter = 0;
+        window.requestAnimFrame(draw);
+        function draw(){
+            if (counter > 50){
+
+                return;
+            }
+        window.requestAnimFrame(draw); 
+        ctx.fillRect(x, y, 50, 50);
+        ctx.drawImage(assets, tileType, 510, 170, 170, x, y+counter, 50, 50);
+        counter = counter + 2;
+        }
+    }
+
+    //функция анимации перемещения группы тайлов на одну клетку вниз (см. также функцию moveTileDown)
+    //input Model, Array ((х, у), (х, у),(х, у)...) (массив массивов с координатами перемещаемого элемента)
+    moveTilesDown (Model, elementCoordinateArray){
+        for (var elementCoordinate of elementCoordinateArray){
+            this.moveTileDown (Model, elementCoordinate);
         }
     }
 

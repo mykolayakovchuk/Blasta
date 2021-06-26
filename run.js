@@ -1,4 +1,5 @@
 'use strict';
+//console.log(Object.keys(x).length)
 //скрипт Пола Ириша для кроссбраузерности
 // setTimeout в качестве запасного варианта
 window.requestAnimFrame = (function(){ 
@@ -21,14 +22,18 @@ function mainCycle(elementCoordinate){
     var x = elementCoordinate[0];
     var y = elementCoordinate[1];
     console.log(x+";"+y+"type"+globalModel.getElementType(elementCoordinate));
-    //console.log(globalModel.findSameTypeElementArray(elementCoordinate));
     var elementCoordinateArray = globalModel.elementCoordinateToArray(elementCoordinate);
     var SameTypeElementArray = globalModel.findSameTypeElementArray(elementCoordinateArray);
-    console.log (SameTypeElementArray);
+    if (SameTypeElementArray === false){
+        return;
+    }
     var MainView = new View(assets);
-    MainView.hideTiles(globalModel, elementCoordinate)
-    globalModel.setElementType(elementCoordinate, 0);
-    //console.log(globalModel.findZeroTypeElements());
+    for (var elementCoordinate of SameTypeElementArray){
+        MainView.hideTiles(globalModel, elementCoordinate);
+        globalModel.setElementType(elementCoordinate, 0);
+    }
+    var ZeroTypeElements = globalModel.findZeroTypeElements();
+    var elementsAboveZero = globalModel.findElementAboveZero(globalModel, ZeroTypeElements);
 }
 // Привязываем функцию генерации стартовой доски к событию onload (чтобы загрузилась графика игры)
 // 
@@ -117,6 +122,10 @@ class Model {
     return Result;    
     }
 
+    //input Array (массив с одним элементом -- массивом с координатами тайла на котором щёлкнул пользователь)
+    //функция находит рядом с тайлом на котором щёлкнул пользователь
+    //тайлы того же цвета
+    //return Array| false (массив с координатами тайлов одинакового (выбранного) цвета) ИЛИ "ЛОЖЬ"
     findSameTypeElementArray(elementCoordinateArray){
         var primaryLength = elementCoordinateArray.length;
         var searchedType = this.getElementType(elementCoordinateArray[0]);
@@ -151,6 +160,31 @@ class Model {
             } 
         }
     return false;    
+    }
+
+    //функция находит все тайлы НАД пустыми тайлами (кроме пустых тайлов и undefined)
+    //input Object (объект состоящий из выборки из модели элементов с типом 0 (т.е. пустых))
+    //return 
+    //@return Array (массив с координатами вида [[number, number], [number, number], [number, number] ....])
+    findElementAboveZero(ModelFull, ZeroTypeElements){
+        var elementsAboveZeroArray = [];
+        var Board = ModelFull.Board;
+        for (var element in ZeroTypeElements){
+            var currentX = ZeroTypeElements[element].x;
+            var currentY = ZeroTypeElements[element].y;
+            //console.log(currentX+"==="+currentY)
+            var aboveElementName = 'element('+currentX+'_'+(currentY-1)+')';
+            if (Board[aboveElementName].type === 0 || Board[aboveElementName].type === "undefined"){
+                continue;
+            }
+            for ( var y = currentY; y > 0; y=y-1){
+                var elementName ='element('+currentX+'_'+y+')';
+                if (Board[elementName].type != 0 && Board[elementName].type !== "undefined"){
+                    elementsAboveZeroArray.push([Board[elementName].x, Board[elementName].y])
+                }
+            }
+        }
+        return elementsAboveZeroArray;
     }
 }
 /**

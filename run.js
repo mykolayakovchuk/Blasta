@@ -41,7 +41,7 @@ function mainCycle(elementCoordinate){
         elementsAboveZero = globalModel.findElementAboveZero(globalModel, globalModel.findZeroTypeElements());
         MainView.moveTilesDown(globalModel, elementsAboveZero);
         globalModel.moveElementsDown(elementsAboveZero);
-        MainView.createView(globalModel);
+        //MainView.createView(globalModel);
     }
 }
 // Привязываем функцию генерации стартовой доски к событию onload (чтобы загрузилась графика игры)
@@ -275,28 +275,37 @@ class View{
         return;
     }
 
-    //функция анимации перемещения одного тайла на одну клетку вниз
+    //функция анимации перемещения одного тайла на одну клетку вниз и верхнего тайла на его место
     //input Model, Array (х, у) (массив с координатами перемещаемого элемента)
     moveTileDown (Model, elementCoordinate){
         var x = this.convertCoordinatesPixel(elementCoordinate[0]);
         var y = this.convertCoordinatesPixel(elementCoordinate[1]);
         var Element = Model.Board["element("+elementCoordinate[0]+"_"+elementCoordinate[1]+")"];
-        if (Element.type == 0){
-            return;
-        };
+        if (elementCoordinate[1] != 1){
+            var ElementAbove = Model.Board["element("+elementCoordinate[0]+"_"+(elementCoordinate[1]-1)+")"];
+        }else{
+            var ElementAbove = Object();
+            ElementAbove.type = 0;
+        }
         this.ctx.fillStyle = "black";
         let ctx = this.ctx;
         let assets = this.assets;
         let tileType = this.tileTypesFromAsset[Element.type];
+        let tileTypeAbove = this.tileTypesFromAsset[ElementAbove.type];
         let counter = 0;
         function draw(){
             if (counter > 50){
                 return;
             }
         window.requestAnimFrame(draw); 
-        ctx.fillRect(x, y, 50, 50);
+        //ctx.fillRect(x, y, 50, 50);
+        if (tileTypeAbove === 0){
+            ctx.fillRect(x, y-50+counter, 50, 50);
+        }else{
+            ctx.drawImage(assets, tileTypeAbove, 510, 170, 170, x, y-50+counter, 50, 50);    
+        }
         ctx.drawImage(assets, tileType, 510, 170, 170, x, y+counter, 50, 50);
-        counter = counter + 2;
+        counter = counter + 1;
         }
         window.requestAnimFrame(draw);
         return;

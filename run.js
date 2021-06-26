@@ -23,7 +23,8 @@ function mainCycle(elementCoordinate){
     console.log(x+";"+y+"type"+globalModel.getElementType(elementCoordinate));
     //console.log(globalModel.findSameTypeElementArray(elementCoordinate));
     var elementCoordinateArray = globalModel.elementCoordinateToArray(elementCoordinate);
-    globalModel.findSameTypeElementArray(elementCoordinateArray);
+    var SameTypeElementArray = globalModel.findSameTypeElementArray(elementCoordinateArray);
+    console.log (SameTypeElementArray);
     var MainView = new View(assets);
     MainView.hideTiles(globalModel, elementCoordinate)
     globalModel.setElementType(elementCoordinate, 0);
@@ -117,19 +118,26 @@ class Model {
     }
 
     findSameTypeElementArray(elementCoordinateArray){
-        var result = elementCoordinateArray;
+        var primaryLength = elementCoordinateArray.length;
         var searchedType = this.getElementType(elementCoordinateArray[0]);
-        //elementCoordinateArray.push([0,0]);
-        for (var element of elementCoordinateArray){
-            var searchArea = [[element[0]-1, element[1]], [element[0]+1, element[1]],
-                              [element[0], element[1]-1], [element[0], element[1]+1]];
-                              console.log(searchArea);
-            for (var neighboringElement of searchArea){
-                if (this.getElementType(neighboringElement) == searchedType
-                    && this.checkEntry (result, neighboringElement) == false){
-                    result.push (neighboringElement);
+            for (var element of elementCoordinateArray){
+                var searchArea = [[element[0]-1, element[1]], [element[0]+1, element[1]],
+                                [element[0], element[1]-1], [element[0], element[1]+1]];
+
+                for (var neighboringElement of searchArea){
+                    if (this.getElementType(neighboringElement) == searchedType
+                        && this.checkEntry (elementCoordinateArray, neighboringElement) == false){
+                        elementCoordinateArray.push (neighboringElement);
+                    }
                 }
             }
+   
+        if (elementCoordinateArray.length < 2){
+            return false;
+        }else if(primaryLength < elementCoordinateArray.length){
+            return this.findSameTypeElementArray(elementCoordinateArray);
+        }else if (primaryLength == elementCoordinateArray.length){
+            return elementCoordinateArray;
         }
     }
 

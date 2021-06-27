@@ -38,11 +38,19 @@ function mainCycle(elementCoordinate){
     while (Object.keys(elementsAboveZero).length > 0){
         //пока есть элементы над пустыми клетками, они будут двигаться по одной клетке вниз
         //пока не останеться элементов над пустыми тайлами(клетками)
-        elementsAboveZero = globalModel.findElementAboveZero(globalModel, globalModel.findZeroTypeElements());
+        //тут есть "баг" с анимацией
         MainView.moveTilesDown(globalModel, elementsAboveZero);
         globalModel.moveElementsDown(elementsAboveZero);
-        //MainView.createView(globalModel);
+        elementsAboveZero = globalModel.findElementAboveZero(globalModel, globalModel.findZeroTypeElements());
     }
+    
+    var ZeroTypeElementsToFill = globalModel.findZeroTypeElementsArray();
+    console.log(ZeroTypeElementsToFill);
+    for (var elementCoordinate of ZeroTypeElementsToFill){
+        globalModel.setElementType(elementCoordinate, globalModel.getRandomColor());
+        MainView.appearTile(globalModel, elementCoordinate);
+    }
+    MainView.createView(globalModel);
 }
 // Привязываем функцию генерации стартовой доски к событию onload (чтобы загрузилась графика игры)
 // 
@@ -131,6 +139,19 @@ class Model {
     return Result;    
     }
 
+    //input Object
+    //функция находит в модели пустые тайлы
+    //возвращает массив массивов с параметрами этих тайлов((х, у), (х, у),(х, у)...)
+    //return Array
+    findZeroTypeElementsArray(){
+        var input = this.findZeroTypeElements();
+        var result = [];
+        for (let elementName in input){
+            result.push([input[elementName].x, input[elementName].y]);
+        }
+    return result;    
+    }
+
     //input Array (массив с одним элементом -- массивом с координатами тайла на котором щёлкнул пользователь)
     //функция находит рядом с тайлом на котором щёлкнул пользователь
     //тайлы того же цвета
@@ -205,11 +226,35 @@ class Model {
     }
 
     //функция перемещения значения группы тайлов на одну клетку вниз
+    //!перемещаются только те тайлы, у которых внизу пустая клетка (тип тайла === 0)
     //input Array ((х, у), (х, у),(х, у)...) (массив массивов с координатами перемещаемого элемента)
     moveElementsDown (elementCoordinateArray){
+
         for (var elementCoordinate of elementCoordinateArray){
-            this.moveElementDown (elementCoordinate);
+            let elementCoordinateUnder = [elementCoordinate[0], (elementCoordinate[1]+1)]
+            if (this.getElementType(elementCoordinateUnder) === 0){
+                this.moveElementDown (elementCoordinate);
+            }else{
+                continue;
+            }    
         }
+        //рекусивный повтор, если есть пустые клетки
+        if (this.functionCheckZeroUnnderElements(elementCoordinateArray) === true){
+            this.moveElementsDown (elementCoordinateArray);
+        }else{
+            return;
+        }
+    }
+
+    //функция проверяет массив тайлов на наличие хотя бы одного пустого тайла под ними
+    functionCheckZeroUnnderElements(elementCoordinateArray){
+        for (var elementCoordinate of elementCoordinateArray){
+            let elementCoordinateUnder = [elementCoordinate[0], (elementCoordinate[1]+1)];
+            if (this.getElementType(elementCoordinateUnder) === 0){
+                return true;
+            }
+        } 
+        return false;
     }
 }
 /**
@@ -305,7 +350,7 @@ class View{
             ctx.drawImage(assets, tileTypeAbove, 510, 170, 170, x, y-50+counter, 50, 50);    
         }
         ctx.drawImage(assets, tileType, 510, 170, 170, x, y+counter, 50, 50);
-        counter = counter + 1;
+        counter = counter + 2;
         }
         window.requestAnimFrame(draw);
         return;
@@ -317,6 +362,34 @@ class View{
         for (var elementCoordinate of elementCoordinateArray){
             this.moveTileDown (Model, elementCoordinate);
         }
+    }
+
+    //функция создаёт анимацию появления тайлов на доске
+    appearTile(Model, elementCoordinate){
+        var x = this.convertCoordinatesPixel(elementCoordinate[0]);
+        var y = this.convertCoordinatesPixel(elementCoordinate[1]);
+        var Element = Model.Board["element("+elementCoordinate[0]+"_"+elementCoordinate[1]+")"];
+        //if (Element.type == 0){
+        //    return;
+        //};
+        this.ctx.fillStyle = "black";
+        let ctx = this.ctx;
+        let assets = this.assets;
+        let tileType = this.tileTypesFromAsset[Element.type];
+        let counter = 23;
+        window.requestAnimFrame(draw);
+        function draw(){
+            if (counter < 2){
+                ctx.drawImage(assets, tileType, 510, 170, 170, x, y, 50, 50);
+                return;
+            }
+        window.requestAnimFrame(draw); 
+        ctx.fillRect(x, y, 50, 50);
+        ctx.drawImage(assets, tileType, 510, 170, 170, x+counter, y+counter, 50-(counter*2), 50-(counter*2));
+        counter = counter - 1;
+        }
+        
+        return;
     }
 
 }

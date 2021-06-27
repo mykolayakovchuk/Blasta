@@ -17,40 +17,49 @@ window.requestAnimFrame = (function(){
 var assets = new Image();
 //Создание глобальной переменной, впоследствии хранящей информацию о модели
 var globalModel;
+var globalView;
 //ОСНОВНОЙ ЦИКЛ ИГРЫ
 function mainCycle(elementCoordinate){
-    var x = elementCoordinate[0];
-    var y = elementCoordinate[1];
-    console.log(x+";"+y+"type"+globalModel.getElementType(elementCoordinate));
+    if (globalModel.remainingMoves < 1){
+        alert ("GAME OVER  SCORE"+globalModel.score);
+        document.reload();
+        return;
+    }
+    //var x = elementCoordinate[0];
+    //var y = elementCoordinate[1];
+    //console.log(x+";"+y+"type"+globalModel.getElementType(elementCoordinate));
     var elementCoordinateArray = globalModel.elementCoordinateToArray(elementCoordinate);
     var SameTypeElementArray = globalModel.findSameTypeElementArray(elementCoordinateArray);
     if (SameTypeElementArray === false){
         return;
     }
-    var MainView = new View(assets);
+    //var MainView = new View(assets);
     for (var elementCoordinate of SameTypeElementArray){
-        MainView.hideTiles(globalModel, elementCoordinate);
+        globalView.hideTiles(globalModel, elementCoordinate);
         globalModel.setElementType(elementCoordinate, 0);
     }
     
     var ZeroTypeElements = globalModel.findZeroTypeElements();
+    
     var elementsAboveZero = globalModel.findElementAboveZero(globalModel, ZeroTypeElements);
     while (Object.keys(elementsAboveZero).length > 0){
         //пока есть элементы над пустыми клетками, они будут двигаться по одной клетке вниз
         //пока не останеться элементов над пустыми тайлами(клетками)
         //тут есть "баг" с анимацией
-        MainView.moveTilesDown(globalModel, elementsAboveZero);
+        globalView.moveTilesDown(globalModel, elementsAboveZero);
         globalModel.moveElementsDown(elementsAboveZero);
         elementsAboveZero = globalModel.findElementAboveZero(globalModel, globalModel.findZeroTypeElements());
+
     }
-    
+    globalModel.score =  globalModel.score + 1*Object.keys(ZeroTypeElements).length;
+    globalModel.remainingMoves = globalModel.remainingMoves - 1;   
     var ZeroTypeElementsToFill = globalModel.findZeroTypeElementsArray();
     console.log(ZeroTypeElementsToFill);
     for (var elementCoordinate of ZeroTypeElementsToFill){
         globalModel.setElementType(elementCoordinate, globalModel.getRandomColor());
-        MainView.appearTile(globalModel, elementCoordinate);
+        globalView.appearTile(globalModel, elementCoordinate);
     }
-    MainView.createView(globalModel);
+    globalView.createView(globalModel);
 }
 // Привязываем функцию генерации стартовой доски к событию onload (чтобы загрузилась графика игры)
 // 
@@ -65,6 +74,7 @@ assets.onload = function() {
     globalModel = Mod;
     console.log (Mod);
     var InitialView = new View(assets);
+    globalView = InitialView;
     InitialView.createView(Mod);
     var GameController = new Controller ();
 };
@@ -86,6 +96,7 @@ class Model {
         }
         this.remainingMoves = 20;
         this.score = 0;
+        this.winCoeff = [2, 3, 4, 5, 7, 9, 10, 12, 18, 23, 29, 37, 55]
     }
 
     
@@ -256,6 +267,8 @@ class Model {
         } 
         return false;
     }
+//Object.keys(obj).length;
+    
 }
 /**
  * 
@@ -290,6 +303,9 @@ class View{
                 this.ctx.drawImage(this.assets, this.tileTypesFromAsset[element.type], 510, 170, 170, this.convertCoordinatesPixel(element.x), this.convertCoordinatesPixel(element.y), 50, 50);
             }
         }
+        this.ctx.font = '20px Arial'
+        this.ctx.fillText("TURNS LEFT" + Model.remainingMoves, 500,150);
+        this.ctx.fillText("SCORE"  + Model.score, 500, 300);
     }
 
     //функция создаёт анимацию исчезновения тайлов с доски
@@ -380,6 +396,7 @@ class View{
         window.requestAnimFrame(draw);
         function draw(){
             if (counter < 2){
+                ctx.fillRect(x, y, 50, 50);
                 ctx.drawImage(assets, tileType, 510, 170, 170, x, y, 50, 50);
                 return;
             }
